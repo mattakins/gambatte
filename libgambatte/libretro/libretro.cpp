@@ -78,6 +78,7 @@ static unsigned turbo_a_counter      = 0;
 static unsigned turbo_b_counter      = 0;
 
 static bool rom_loaded = false;
+static bool layer_alpha_encoding = true;  // Encode layer info in alpha channel
 
 //Dual mode runs two GBCs side by side.
 //Currently, they load the same ROM, take the same input, and only the left one supports SRAM, cheats, savestates, or sound.
@@ -2415,7 +2416,7 @@ static void check_variables(bool startup)
    
    // Enable colour correction, if required
    gb.setColorCorrection((colorCorrection == 2) || ((colorCorrection == 1) && isGbcPalette));
-   
+
    // If gambatte is using custom colourisation
    // then we have already loaded the palette.
    // In this case we can therefore skip this loop.
@@ -2430,6 +2431,18 @@ static void check_variables(bool startup)
             gb.setDmgPaletteColor(palnum, colornum, rgb32);
          }
       }
+   }
+
+   // Layer alpha encoding for shader-based effects (parallax, etc.)
+   layer_alpha_encoding = true;
+   var.key              = "gambatte_layer_alpha_encoding";
+   var.value            = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "enabled"))
+         layer_alpha_encoding = true;
+      else
+         layer_alpha_encoding = false;
    }
 }
 
