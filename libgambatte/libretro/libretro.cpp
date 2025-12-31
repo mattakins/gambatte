@@ -51,6 +51,7 @@ static retro_input_state_t input_state_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 static gambatte::video_pixel_t* video_buf;
+static uint8_t* depth_buf = NULL;
 static gambatte::GB gb;
 
 static bool libretro_supports_option_categories = false;
@@ -1587,6 +1588,14 @@ void retro_init(void)
    video_buf = (gambatte::video_pixel_t*)malloc(VIDEO_BUFF_SIZE);
 #endif
 
+   /* Allocate depth buffer for layer parallax (R8 format) */
+   depth_buf = (uint8_t*)malloc(VIDEO_WIDTH * VIDEO_HEIGHT);
+   if (depth_buf)
+   {
+      memset(depth_buf, 0x55, VIDEO_WIDTH * VIDEO_HEIGHT);  /* Default: background layer */
+      gb.setDepthBuffer(depth_buf);
+   }
+
    check_system_specs();
    
    //gb/gbc bootloader support
@@ -2663,6 +2672,12 @@ bool retro_load_game_special(unsigned, const struct retro_game_info*, size_t) { 
 void retro_unload_game()
 {
    rom_loaded = false;
+
+   if (depth_buf)
+   {
+      free(depth_buf);
+      depth_buf = NULL;
+   }
 }
 
 unsigned retro_get_region() { return RETRO_REGION_NTSC; }
@@ -2756,6 +2771,17 @@ void retro_run()
       blend_frames();
 
    video_cb(video_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
+
+   /* Send depth buffer for layer parallax shaders */
+   if (layer_alpha_encoding && depth_buf)
+   {
+      struct retro_depth_buffer_info depth_info;
+      depth_info.data   = depth_buf;
+      depth_info.width  = VIDEO_WIDTH;
+      depth_info.height = VIDEO_HEIGHT;
+      depth_info.pitch  = VIDEO_WIDTH;
+      environ_cb(RETRO_ENVIRONMENT_SET_DEPTH_BUFFER, &depth_info);
+   }
 
    if (use_cc_resampler)
       CC_renderaudio((audio_frame_t*)sound_buf.u32, samples);

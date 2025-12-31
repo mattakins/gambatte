@@ -817,6 +817,10 @@ static void plotPixel(PPUPriv &p) {
 #else
 		fbline[xpos - 8] = pixel;
 #endif
+		/* Write layer to separate depth buffer if available */
+		uint8_t *depthline = p.framebuf.depthline();
+		if (depthline)
+			depthline[xpos - 8] = layer_id;
 	}
 
 	p.xpos = xpos + 1;

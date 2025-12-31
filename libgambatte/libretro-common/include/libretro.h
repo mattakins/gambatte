@@ -1767,6 +1767,23 @@ enum retro_mod
                                             * (see enum retro_savestate_context)
                                             */
 
+#define RETRO_ENVIRONMENT_SET_DEPTH_BUFFER (82 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+                                           /* const struct retro_depth_buffer_info * --
+                                            * Provides auxiliary depth/layer information for shader effects.
+                                            * Cores can optionally provide a depth buffer alongside the color
+                                            * framebuffer to enable advanced shader effects like parallax.
+                                            * Format: R8 (single channel, 8-bit unsigned)
+                                            */
+
+/* Depth buffer for shader layer parallax effects */
+struct retro_depth_buffer_info
+{
+   const void *data;   /* Pointer to depth data (R8 format) */
+   unsigned width;     /* Width in pixels */
+   unsigned height;    /* Height in pixels */
+   size_t pitch;       /* Bytes per row */
+};
+
 /* VFS functionality */
 
 /* File paths:

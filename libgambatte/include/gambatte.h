@@ -86,6 +86,11 @@ public:
 	  */
 	void setDmgPaletteColor(unsigned palNum, unsigned colorNum, unsigned rgb32);
 
+	/** Sets the depth buffer for layer parallax effects.
+	  * @param depthBuf R8 buffer (160x144) for layer depth values
+	  */
+	void setDepthBuffer(uint8_t *depthBuf);
+
 	/** Sets the callback used for getting input state. */
 	void setInputGetter(InputGetter *getInput);
    

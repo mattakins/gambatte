@@ -127,6 +127,10 @@ public:
 		lcd_.setVideoBuffer(videoBuf, pitch);
 	}
 
+	void setDepthBuffer(uint8_t *depthBuf) {
+		lcd_.setDepthBuffer(depthBuf);
+	}
+
 	void setDmgPaletteColor(int palNum, int colorNum, unsigned long rgb32) {
 		lcd_.setDmgPaletteColor(palNum, colorNum, rgb32);
 	}

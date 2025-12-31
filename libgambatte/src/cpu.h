@@ -94,6 +94,10 @@ public:
 		mem_.setDmgPaletteColor(palNum, colorNum, rgb32);
 	}
 
+	void setDepthBuffer(uint8_t *depthBuf) {
+		mem_.setDepthBuffer(depthBuf);
+	}
+
 	void setGameGenie(std::string const &codes) { mem_.setGameGenie(codes); }
 	void setGameShark(std::string const &codes) { mem_.setGameShark(codes); }
 

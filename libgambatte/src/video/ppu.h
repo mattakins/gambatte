@@ -30,17 +30,25 @@ namespace gambatte {
 
 class PPUFrameBuf {
 public:
-	PPUFrameBuf() : buf_(0), fbline_(nullfbline()), pitch_(0) {}
+	PPUFrameBuf() : buf_(0), fbline_(nullfbline()), pitch_(0), depth_(0), depthline_(0) {}
 	video_pixel_t * fb() const { return buf_; }
 	video_pixel_t * fbline() const { return fbline_; }
 	std::ptrdiff_t pitch() const { return pitch_; }
+	uint8_t * depth() const { return depth_; }
+	uint8_t * depthline() const { return depthline_; }
 	void setBuf(video_pixel_t *buf, std::ptrdiff_t pitch) { buf_ = buf; pitch_ = pitch; fbline_ = nullfbline(); }
-	void setFbline(unsigned ly) { fbline_ = buf_ ? buf_ + std::ptrdiff_t(ly) * pitch_ : nullfbline(); }
+	void setDepth(uint8_t *depth) { depth_ = depth; depthline_ = 0; }
+	void setFbline(unsigned ly) {
+		fbline_ = buf_ ? buf_ + std::ptrdiff_t(ly) * pitch_ : nullfbline();
+		depthline_ = depth_ ? depth_ + ly * 160 : 0;
+	}
 
 private:
 	video_pixel_t *buf_;
 	video_pixel_t *fbline_;
 	std::ptrdiff_t pitch_;
+	uint8_t *depth_;
+	uint8_t *depthline_;
 
 	static video_pixel_t * nullfbline() { static video_pixel_t nullfbline_[160]; return nullfbline_; }
 };
@@ -129,6 +137,7 @@ public:
 	void resetCc(unsigned long oldCc, unsigned long newCc);
 	void saveState(SaveState &ss) const;
 	void setFrameBuf(video_pixel_t *buf, std::ptrdiff_t pitch) { p_.framebuf.setBuf(buf, pitch); }
+	void setDepthBuffer(uint8_t *buf) { p_.framebuf.setDepth(buf); }
 	void setLcdc(unsigned lcdc, unsigned long cc);
 	void setScx(unsigned scx) { p_.scx = scx; }
 	void setScy(unsigned scy) { p_.scy = scy; }

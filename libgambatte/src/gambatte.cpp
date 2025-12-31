@@ -126,6 +126,10 @@ void GB::setDmgPaletteColor(unsigned palNum, unsigned colorNum, unsigned rgb32) 
 	p_->cpu.setDmgPaletteColor(palNum, colorNum, rgb32);
 }
 
+void GB::setDepthBuffer(uint8_t *depthBuf) {
+	p_->cpu.setDepthBuffer(depthBuf);
+}
+
 void GB::loadState(const void *data) {
    SaveState state;
    p_->cpu.setStatePtrs(state);
