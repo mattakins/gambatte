@@ -1,0 +1,41 @@
+name: Build Android Core
+
+on:
+  push:
+    branches: [depth, master]
+  pull_request:
+    branches: [depth, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: r26d
+
+      - name: Build with ndk-build
+        run: |
+          ${{ steps.ndk.outputs.ndk-path }}/ndk-build \
+            -C libgambatte/libretro/jni \
+            -j$(nproc)
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          for abi_dir in libgambatte/libretro/libs/*/; do
+            abi=$(basename "$abi_dir")
+            cp "$abi_dir/libretro.so" "artifacts/gambatte_layers_libretro_android_${abi}.so"
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gambatte-layers-android
+          path: artifacts/
