@@ -290,6 +290,10 @@ namespace gambatte
 #elif defined(VIDEO_ABGR1555)
       return bFinal << 10 | gFinal << 5 | rFinal;
 #else
+      /* Expand 5-bit (0-31) to 8-bit (0-255) via bit replication */
+      rFinal = (rFinal << 3) | (rFinal >> 2);
+      gFinal = (gFinal << 3) | (gFinal >> 2);
+      bFinal = (bFinal << 3) | (bFinal >> 2);
       return rFinal << 16 | gFinal << 8 | bFinal;
 #endif
    }

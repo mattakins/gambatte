@@ -791,25 +791,25 @@ static void blend_frames_lcd_ghost(void)
          float g_prev_4 = static_cast<float>(rgb_prev_4 >>  5 & 0x1F);
          float b_prev_4 = static_cast<float>(rgb_prev_4 >> 10 & 0x1F);
 #else
-         float r_curr = static_cast<float>(rgb_curr >> 16 & 0x1F);
-         float g_curr = static_cast<float>(rgb_curr >>  8 & 0x1F);
-         float b_curr = static_cast<float>(rgb_curr       & 0x1F);
+         float r_curr = static_cast<float>(rgb_curr >> 16 & 0xFF);
+         float g_curr = static_cast<float>(rgb_curr >>  8 & 0xFF);
+         float b_curr = static_cast<float>(rgb_curr       & 0xFF);
 
-         float r_prev_1 = static_cast<float>(rgb_prev_1 >> 16 & 0x1F);
-         float g_prev_1 = static_cast<float>(rgb_prev_1 >>  8 & 0x1F);
-         float b_prev_1 = static_cast<float>(rgb_prev_1       & 0x1F);
+         float r_prev_1 = static_cast<float>(rgb_prev_1 >> 16 & 0xFF);
+         float g_prev_1 = static_cast<float>(rgb_prev_1 >>  8 & 0xFF);
+         float b_prev_1 = static_cast<float>(rgb_prev_1       & 0xFF);
 
-         float r_prev_2 = static_cast<float>(rgb_prev_2 >> 16 & 0x1F);
-         float g_prev_2 = static_cast<float>(rgb_prev_2 >>  8 & 0x1F);
-         float b_prev_2 = static_cast<float>(rgb_prev_2       & 0x1F);
+         float r_prev_2 = static_cast<float>(rgb_prev_2 >> 16 & 0xFF);
+         float g_prev_2 = static_cast<float>(rgb_prev_2 >>  8 & 0xFF);
+         float b_prev_2 = static_cast<float>(rgb_prev_2       & 0xFF);
 
-         float r_prev_3 = static_cast<float>(rgb_prev_3 >> 16 & 0x1F);
-         float g_prev_3 = static_cast<float>(rgb_prev_3 >>  8 & 0x1F);
-         float b_prev_3 = static_cast<float>(rgb_prev_3       & 0x1F);
+         float r_prev_3 = static_cast<float>(rgb_prev_3 >> 16 & 0xFF);
+         float g_prev_3 = static_cast<float>(rgb_prev_3 >>  8 & 0xFF);
+         float b_prev_3 = static_cast<float>(rgb_prev_3       & 0xFF);
 
-         float r_prev_4 = static_cast<float>(rgb_prev_4 >> 16 & 0x1F);
-         float g_prev_4 = static_cast<float>(rgb_prev_4 >>  8 & 0x1F);
-         float b_prev_4 = static_cast<float>(rgb_prev_4       & 0x1F);
+         float r_prev_4 = static_cast<float>(rgb_prev_4 >> 16 & 0xFF);
+         float g_prev_4 = static_cast<float>(rgb_prev_4 >>  8 & 0xFF);
+         float b_prev_4 = static_cast<float>(rgb_prev_4       & 0xFF);
 #endif
          /* Mix colours for current frame and convert back to video_pixel_t
           * > Response time effect implemented via an exponential
@@ -820,19 +820,19 @@ static void blend_frames_lcd_ghost(void)
          r_curr += (r_prev_2 - r_curr) * *(response + 1);
          r_curr += (r_prev_3 - r_curr) * *(response + 2);
          r_curr += (r_prev_4 - r_curr) * *(response + 3);
-         gambatte::video_pixel_t r_mix = static_cast<gambatte::video_pixel_t>(r_curr + 0.5f) & 0x1F;
+         gambatte::video_pixel_t r_mix = static_cast<gambatte::video_pixel_t>(r_curr + 0.5f) & 0xFF;
 
          g_curr += (g_prev_1 - g_curr) * *response;
          g_curr += (g_prev_2 - g_curr) * *(response + 1);
          g_curr += (g_prev_3 - g_curr) * *(response + 2);
          g_curr += (g_prev_4 - g_curr) * *(response + 3);
-         gambatte::video_pixel_t g_mix = static_cast<gambatte::video_pixel_t>(g_curr + 0.5f) & 0x1F;
+         gambatte::video_pixel_t g_mix = static_cast<gambatte::video_pixel_t>(g_curr + 0.5f) & 0xFF;
 
          b_curr += (b_prev_1 - b_curr) * *response;
          b_curr += (b_prev_2 - b_curr) * *(response + 1);
          b_curr += (b_prev_3 - b_curr) * *(response + 2);
          b_curr += (b_prev_4 - b_curr) * *(response + 3);
-         gambatte::video_pixel_t b_mix = static_cast<gambatte::video_pixel_t>(b_curr + 0.5f) & 0x1F;
+         gambatte::video_pixel_t b_mix = static_cast<gambatte::video_pixel_t>(b_curr + 0.5f) & 0xFF;
 
          /* Repack colours for current frame */
 #ifdef VIDEO_RGB565
@@ -880,9 +880,9 @@ static void blend_frames_lcd_ghost_fast(void)
          float g_curr = static_cast<float>(rgb_curr >>  5 & 0x1F);
          float b_curr = static_cast<float>(rgb_curr >> 10 & 0x1F);
 #else
-         float r_curr = static_cast<float>(rgb_curr >> 16 & 0x1F);
-         float g_curr = static_cast<float>(rgb_curr >>  8 & 0x1F);
-         float b_curr = static_cast<float>(rgb_curr       & 0x1F);
+         float r_curr = static_cast<float>(rgb_curr >> 16 & 0xFF);
+         float g_curr = static_cast<float>(rgb_curr >>  8 & 0xFF);
+         float b_curr = static_cast<float>(rgb_curr       & 0xFF);
 #endif
          /* Mix colours for current frame */
          float r_mix = (r_curr * (1.0f - LCD_RESPONSE_TIME_FAKE)) + (LCD_RESPONSE_TIME_FAKE * r_prev);
@@ -904,9 +904,9 @@ static void blend_frames_lcd_ghost_fast(void)
                        | (static_cast<gambatte::video_pixel_t>(g_mix + 0.5f) & 0x1F) << 5
                        | (static_cast<gambatte::video_pixel_t>(b_mix + 0.5f) & 0x1F) << 10;
 #else
-         *(curr + x) =   (static_cast<gambatte::video_pixel_t>(r_mix + 0.5f) & 0x1F) << 16
-                       | (static_cast<gambatte::video_pixel_t>(g_mix + 0.5f) & 0x1F) << 8
-                       | (static_cast<gambatte::video_pixel_t>(b_mix + 0.5f) & 0x1F);
+         *(curr + x) =   (static_cast<gambatte::video_pixel_t>(r_mix + 0.5f) & 0xFF) << 16
+                       | (static_cast<gambatte::video_pixel_t>(g_mix + 0.5f) & 0xFF) << 8
+                       | (static_cast<gambatte::video_pixel_t>(b_mix + 0.5f) & 0xFF);
 #endif
       }
 
@@ -2776,7 +2776,8 @@ void retro_run()
       blend_frames();
 
    /* Encode layer IDs in blue channel LSBs for parallax shaders.
-    * Done after blending so the layer data survives frame mixing. */
+    * Done after blending and color expansion so the layer data
+    * is stamped on the final 8-bit pixel values. */
    if (layer_alpha_encoding && depth_buf)
    {
       gambatte::video_pixel_t *buf = video_buf;
