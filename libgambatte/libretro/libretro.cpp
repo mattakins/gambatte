@@ -1592,7 +1592,7 @@ void retro_init(void)
    depth_buf = (uint8_t*)malloc(VIDEO_WIDTH * VIDEO_HEIGHT);
    if (depth_buf)
    {
-      memset(depth_buf, 0x55, VIDEO_WIDTH * VIDEO_HEIGHT);  /* Default: background layer */
+      memset(depth_buf, 0x01, VIDEO_WIDTH * VIDEO_HEIGHT);  /* Default: background layer */
       gb.setDepthBuffer(depth_buf);
    }
 
@@ -2769,6 +2769,21 @@ void retro_run()
    /* Perform interframe blending, if required */
    if (blend_frames)
       blend_frames();
+
+   /* Encode layer IDs in blue channel LSBs for parallax shaders.
+    * Done after blending so the layer data survives frame mixing. */
+   if (layer_alpha_encoding && depth_buf)
+   {
+      gambatte::video_pixel_t *buf = video_buf;
+      for (unsigned y = 0; y < VIDEO_HEIGHT; y++)
+      {
+         for (unsigned x = 0; x < VIDEO_WIDTH; x++)
+         {
+            unsigned idx = y * VIDEO_PITCH + x;
+            buf[idx] = (buf[idx] & 0xFFFFFFFC) | (depth_buf[y * VIDEO_WIDTH + x] & 0x03);
+         }
+      }
+   }
 
    video_cb(video_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
 

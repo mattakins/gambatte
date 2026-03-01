@@ -1164,9 +1164,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
 #endif
    {
       "gambatte_layer_alpha_encoding",
-      "Layer Alpha Encoding",
+      "Layer Encoding for Shaders",
       NULL,
-      "Encode layer information (Background, Window, Sprites) in the alpha channel for use by shaders. When enabled, parallax and other layer-based effects become possible with compatible shaders. Requires 32-bit color depth. No performance impact if no shader is loaded.",
+      "Encode layer information (Background, Window, Sprites) in blue channel LSBs for use by parallax shaders. Imperceptible visual impact (max ±3/255 on blue). Works on all platforms and video drivers.",
       NULL,
       NULL,
       {

@@ -757,15 +757,14 @@ static void plotPixel(PPUPriv &p) {
 	video_pixel_t pixel = p.bgPalette[twdata + (p.attrib & 7) * 4];
 	int i = static_cast<int>(p.nextSprite) - 1;
 
-	/* Layer tracking for alpha encoding (near-opaque to avoid
-	 * premultiplied alpha darkening on some platforms):
-	 * 0xFD (253) = Background layer
-	 * 0xFE (254) = Window layer
-	 * 0xFF (255) = Sprite layer */
-	unsigned char layer_id = 0xFD;  // Default: background
+	/* Layer tracking for depth buffer (used by LSB encoding in libretro):
+	 * 0x01 = Background layer
+	 * 0x02 = Window layer
+	 * 0x03 = Sprite layer */
+	unsigned char layer_id = 0x01;  // Default: background
 
 	if (p.winDrawState & win_draw_started)
-		layer_id = 0xFE;  // Window layer active
+		layer_id = 0x02;  // Window layer active
 
 	if (i >= 0 && int(p.spriteList[i].spx) > xpos - 8) {
 		unsigned spdata = 0;
@@ -791,7 +790,7 @@ static void plotPixel(PPUPriv &p) {
                pixel = p.spPalette[(attrib >> 2 & 4) + spdata];
 				else
                pixel = p.spPalette[(attrib & 7) * 4 + spdata];
-				layer_id = 0xFF;  // Sprite overwrote background
+				layer_id = 0x03;  // Sprite overwrote background
 			}
 		} else {
 			do {
@@ -806,18 +805,13 @@ static void plotPixel(PPUPriv &p) {
 
 			if (spdata && lcdcObjEn(p) && (!(attrib & attr_bgpriority) || !twdata)) {
 				pixel = p.spPalette[(attrib >> 2 & 4) + spdata];
-				layer_id = 0xFF;  // Sprite overwrote background
+				layer_id = 0x03;  // Sprite overwrote background
 			}
 		}
 	}
 
 	if (xpos - 8 >= 0) {
-#if !defined(VIDEO_RGB565) && !defined(VIDEO_ABGR1555)
-		/* Encode layer information in alpha channel (32-bit color only) */
-		fbline[xpos - 8] = (pixel & 0x00FFFFFF) | (static_cast<video_pixel_t>(layer_id) << 24);
-#else
 		fbline[xpos - 8] = pixel;
-#endif
 		/* Write layer to separate depth buffer if available */
 		uint8_t *depthline = p.framebuf.depthline();
 		if (depthline)
