@@ -757,14 +757,15 @@ static void plotPixel(PPUPriv &p) {
 	video_pixel_t pixel = p.bgPalette[twdata + (p.attrib & 7) * 4];
 	int i = static_cast<int>(p.nextSprite) - 1;
 
-	/* Layer tracking for alpha encoding:
-	 * 0x55 (85)  = Background layer
-	 * 0xAA (170) = Window layer
+	/* Layer tracking for alpha encoding (near-opaque to avoid
+	 * premultiplied alpha darkening on some platforms):
+	 * 0xFD (253) = Background layer
+	 * 0xFE (254) = Window layer
 	 * 0xFF (255) = Sprite layer */
-	unsigned char layer_id = 0x55;  // Default: background
+	unsigned char layer_id = 0xFD;  // Default: background
 
 	if (p.winDrawState & win_draw_started)
-		layer_id = 0xAA;  // Window layer active
+		layer_id = 0xFE;  // Window layer active
 
 	if (i >= 0 && int(p.spriteList[i].spx) > xpos - 8) {
 		unsigned spdata = 0;
