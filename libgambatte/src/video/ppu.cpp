@@ -362,6 +362,7 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 		{
 			video_pixel_t *const dst = dbufline + (xpos - 8);
 			unsigned const tileword = -(p.lcdc & 1U) & p.ntileword;
+			uint8_t *const depthline = p.framebuf.depthline();
 
 			dst[0] = p.bgPalette[ tileword & 0x0003       ];
 			dst[1] = p.bgPalette[(tileword & 0x000C) >>  2];
@@ -381,6 +382,8 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 					--i;
 				} while (i >= 0 && int(p.spriteList[i].spx) > xpos - 8);
 			} else {
+				uint8_t *dl = depthline ? depthline + (xpos - 8) : 0;
+
 				do {
 					int n;
 					int pos = int(p.spriteList[i].spx) - xpos;
@@ -397,27 +400,20 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 
 					if (!(attrib & attr_bgpriority)) {
 						switch (n) {
-						case 8: if (spword >> 14    ) { d[7] = spPalette[spword >> 14    ]; }
-						case 7: if (spword >> 12 & 3) { d[6] = spPalette[spword >> 12 & 3]; }
-						case 6: if (spword >> 10 & 3) { d[5] = spPalette[spword >> 10 & 3]; }
-						case 5: if (spword >>  8 & 3) { d[4] = spPalette[spword >>  8 & 3]; }
-						case 4: if (spword >>  6 & 3) { d[3] = spPalette[spword >>  6 & 3]; }
-						case 3: if (spword >>  4 & 3) { d[2] = spPalette[spword >>  4 & 3]; }
-						case 2: if (spword >>  2 & 3) { d[1] = spPalette[spword >>  2 & 3]; }
-						case 1: if (spword       & 3) { d[0] = spPalette[spword       & 3]; }
+						case 8: if (spword >> 14    ) { d[7] = spPalette[spword >> 14    ]; if (dl) dl[pos+7] = 0x03; }
+						case 7: if (spword >> 12 & 3) { d[6] = spPalette[spword >> 12 & 3]; if (dl) dl[pos+6] = 0x03; }
+						case 6: if (spword >> 10 & 3) { d[5] = spPalette[spword >> 10 & 3]; if (dl) dl[pos+5] = 0x03; }
+						case 5: if (spword >>  8 & 3) { d[4] = spPalette[spword >>  8 & 3]; if (dl) dl[pos+4] = 0x03; }
+						case 4: if (spword >>  6 & 3) { d[3] = spPalette[spword >>  6 & 3]; if (dl) dl[pos+3] = 0x03; }
+						case 3: if (spword >>  4 & 3) { d[2] = spPalette[spword >>  4 & 3]; if (dl) dl[pos+2] = 0x03; }
+						case 2: if (spword >>  2 & 3) { d[1] = spPalette[spword >>  2 & 3]; if (dl) dl[pos+1] = 0x03; }
+						case 1: if (spword       & 3) { d[0] = spPalette[spword       & 3]; if (dl) dl[pos]   = 0x03; }
 						}
 
 						spword >>= n * 2;
-
-						/*do {
-							if (spword & 3)
-								dst[pos] = spPalette[spword & 3];
-
-							spword >>= 2;
-							++pos;
-						} while (--n);*/
 					} else {
 						unsigned tw = tileword >> pos * 2;
+						int const n_orig = n;
 						d += n;
 						n = -n;
 
@@ -425,9 +421,12 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
                   {
 							if (spword & 3)
                      {
-								d[n] = (tw & 3)
-								     ? p.bgPalette[    tw & 3]
-								     :   spPalette[spword & 3];
+								if (tw & 3) {
+									d[n] = p.bgPalette[tw & 3];
+								} else {
+									d[n] = spPalette[spword & 3];
+									if (dl) dl[pos + n_orig + n] = 0x03;
+								}
 							}
 
 							spword >>= 2;
@@ -549,6 +548,7 @@ static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *co
 			unsigned const tileword = p.ntileword;
 			unsigned const attrib   = p.nattrib;
 			video_pixel_t const *const bgPalette = p.bgPalette + (attrib & 7) * 4;
+			uint8_t *const depthline = p.framebuf.depthline();
 
 			dst[0] = bgPalette[ tileword & 0x0003       ];
 			dst[1] = bgPalette[(tileword & 0x000C) >>  2];
@@ -570,6 +570,7 @@ static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *co
 			} else {
 				unsigned char idtab[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 				unsigned const bgprioritymask = p.lcdc << 7;
+				uint8_t *dl = depthline ? depthline + (xpos - 8) : 0;
 
 				do {
 					int n;
@@ -598,57 +599,58 @@ static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *co
 						case 8: if ((spword >> 14    ) && id < idt[7]) {
 						        	idt[7] = id;
 						        	  d[7] = spPalette[spword >> 14    ];
+						        	if (dl) dl[pos+7] = 0x03;
 						        }
 						case 7: if ((spword >> 12 & 3) && id < idt[6]) {
 						        	idt[6] = id;
 						        	  d[6] = spPalette[spword >> 12 & 3];
+						        	if (dl) dl[pos+6] = 0x03;
 						        }
 						case 6: if ((spword >> 10 & 3) && id < idt[5]) {
 						        	idt[5] = id;
 						        	  d[5] = spPalette[spword >> 10 & 3];
+						        	if (dl) dl[pos+5] = 0x03;
 						        }
 						case 5: if ((spword >>  8 & 3) && id < idt[4]) {
 						        	idt[4] = id;
 						        	  d[4] = spPalette[spword >>  8 & 3];
+						        	if (dl) dl[pos+4] = 0x03;
 						        }
 						case 4: if ((spword >>  6 & 3) && id < idt[3]) {
 						        	idt[3] = id;
 						        	  d[3] = spPalette[spword >>  6 & 3];
+						        	if (dl) dl[pos+3] = 0x03;
 						        }
 						case 3: if ((spword >>  4 & 3) && id < idt[2]) {
 						        	idt[2] = id;
 						        	  d[2] = spPalette[spword >>  4 & 3];
+						        	if (dl) dl[pos+2] = 0x03;
 						        }
 						case 2: if ((spword >>  2 & 3) && id < idt[1]) {
 						        	idt[1] = id;
 						        	  d[1] = spPalette[spword >>  2 & 3];
+						        	if (dl) dl[pos+1] = 0x03;
 						        }
 						case 1: if ((spword       & 3) && id < idt[0]) {
 						        	idt[0] = id;
 						        	  d[0] = spPalette[spword       & 3];
+						        	if (dl) dl[pos]   = 0x03;
 						        }
 						}
 
 						spword >>= n * 2;
-
-						/*do {
-							if ((spword & 3) && id < idtab[pos]) {
-								idtab[pos] = id;
-									dst[pos] = spPalette[spword & 3];
-							}
-
-							spword >>= 2;
-							++pos;
-						} while (--n);*/
 					} else {
 						unsigned tw = tileword >> pos * 2;
 
 						do {
 							if ((spword & 3) && id < idtab[pos]) {
 								idtab[pos] = id;
-								  dst[pos] = (tw & 3)
-								           ? bgPalette[    tw & 3]
-								           : spPalette[spword & 3];
+								if (tw & 3) {
+									dst[pos] = bgPalette[tw & 3];
+								} else {
+									dst[pos] = spPalette[spword & 3];
+									if (dl) dl[pos] = 0x03;
+								}
 							}
 
 							spword >>= 2;

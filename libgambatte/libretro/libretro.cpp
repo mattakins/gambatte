@@ -2746,6 +2746,11 @@ void retro_run()
    } static sound_buf;
    unsigned samples = SOUND_SAMPLES_PER_RUN;
 
+   /* Clear depth buffer before rendering so the fast tile path
+    * doesn't carry stale layer IDs from the previous frame */
+   if (layer_alpha_encoding && depth_buf)
+      memset(depth_buf, 0x01, VIDEO_WIDTH * VIDEO_HEIGHT);
+
    while (gb.runFor(video_buf, VIDEO_PITCH, sound_buf.u32, SOUND_BUFF_SIZE, samples) == -1)
    {
       if (use_cc_resampler)
