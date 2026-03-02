@@ -51,6 +51,7 @@ class LCD
       void setDmgPaletteColor(unsigned palNum, unsigned colorNum, video_pixel_t rgb32);
       void setVideoBuffer(video_pixel_t *videoBuf, int pitch);
       void setDepthBuffer(uint8_t *depthBuf) { ppu_.setDepthBuffer(depthBuf); }
+      void setBgBuffer(video_pixel_t *bgBuf) { ppu_.setBgBuffer(bgBuf); }
       void setDmgMode(bool mode) { ppu_.setDmgMode(mode); }
    
       void swapToDMG() {

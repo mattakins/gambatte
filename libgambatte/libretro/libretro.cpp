@@ -51,6 +51,8 @@ static retro_input_state_t input_state_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 static gambatte::video_pixel_t* video_buf;
+static gambatte::video_pixel_t* combined_buf = NULL;
+static gambatte::video_pixel_t* bg_buf = NULL;
 static uint8_t* depth_buf = NULL;
 static gambatte::GB gb;
 
@@ -1548,11 +1550,12 @@ void retro_get_system_info(struct retro_system_info *info)
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
+   unsigned output_height = (layer_alpha_encoding && combined_buf) ? VIDEO_HEIGHT * 2 : VIDEO_HEIGHT;
 
    info->geometry.base_width   = VIDEO_WIDTH;
-   info->geometry.base_height  = VIDEO_HEIGHT;
+   info->geometry.base_height  = output_height;
    info->geometry.max_width    = VIDEO_WIDTH;
-   info->geometry.max_height   = VIDEO_HEIGHT;
+   info->geometry.max_height   = VIDEO_HEIGHT * 2;
    info->geometry.aspect_ratio = (float)GB_SCREEN_WIDTH / (float)VIDEO_HEIGHT;
 
    info->timing.fps            = VIDEO_REFRESH_RATE;
@@ -1582,11 +1585,25 @@ void retro_init(void)
    gb2.setInputGetter(&gb_input);
 #endif
 
+   /* Allocate combined double-height buffer for BG-only parallax.
+    * Top half = composited frame (video_buf points here for PPU output).
+    * Bottom half = BG-only (no sprites/window) for ghost-free parallax. */
+   combined_buf = (gambatte::video_pixel_t*)malloc(VIDEO_PITCH * VIDEO_HEIGHT * 2 * sizeof(gambatte::video_pixel_t));
+   if (combined_buf)
+   {
+      memset(combined_buf, 0, VIDEO_PITCH * VIDEO_HEIGHT * 2 * sizeof(gambatte::video_pixel_t));
+      video_buf = combined_buf;
+      bg_buf = combined_buf + VIDEO_PITCH * VIDEO_HEIGHT;
+      gb.setBgBuffer(bg_buf);
+   }
+   else
+   {
 #ifdef _3DS
-   video_buf = (gambatte::video_pixel_t*)linearMemAlign(VIDEO_BUFF_SIZE, 128);
+      video_buf = (gambatte::video_pixel_t*)linearMemAlign(VIDEO_BUFF_SIZE, 128);
 #else
-   video_buf = (gambatte::video_pixel_t*)malloc(VIDEO_BUFF_SIZE);
+      video_buf = (gambatte::video_pixel_t*)malloc(VIDEO_BUFF_SIZE);
 #endif
+   }
 
    /* Allocate depth buffer for layer parallax (R8 format) */
    depth_buf = (uint8_t*)malloc(VIDEO_WIDTH * VIDEO_HEIGHT);
@@ -1634,12 +1651,22 @@ void retro_init(void)
 
 void retro_deinit(void)
 {
+   if (combined_buf)
+   {
+      free(combined_buf);
+      combined_buf = NULL;
+      bg_buf = NULL;
+      video_buf = NULL;
+   }
+   else
+   {
 #ifdef _3DS
-   linearFree(video_buf);
+      linearFree(video_buf);
 #else
-   free(video_buf);
+      free(video_buf);
 #endif
-   video_buf = NULL;
+      video_buf = NULL;
+   }
    deinit_frame_blending();
    audio_resampler_deinit();
 
@@ -2731,10 +2758,13 @@ void retro_run()
    input_poll_cb();
    update_input_state();
 
+   bool double_height = layer_alpha_encoding && combined_buf;
+   unsigned output_height = double_height ? VIDEO_HEIGHT * 2 : VIDEO_HEIGHT;
+
    uint64_t expected_frames = samples_count / SOUND_SAMPLES_PER_FRAME;
    if (frames_count < expected_frames) // Detect frame dupes.
    {
-      video_cb(NULL, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
+      video_cb(NULL, VIDEO_WIDTH, output_height, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
       frames_count++;
       return;
    }
@@ -2777,7 +2807,8 @@ void retro_run()
 
    /* Encode layer IDs in blue channel LSBs for parallax shaders.
     * Done after blending and color expansion so the layer data
-    * is stamped on the final 8-bit pixel values. */
+    * is stamped on the final 8-bit pixel values.
+    * Only stamp the top half (composited frame); bottom half (BG-only) stays clean. */
    if (layer_alpha_encoding && depth_buf)
    {
       gambatte::video_pixel_t *buf = video_buf;
@@ -2791,7 +2822,10 @@ void retro_run()
       }
    }
 
-   video_cb(video_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
+   if (double_height)
+      video_cb(combined_buf, VIDEO_WIDTH, VIDEO_HEIGHT * 2, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
+   else
+      video_cb(video_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_PITCH * sizeof(gambatte::video_pixel_t));
 
    /* Send depth buffer for layer parallax shaders */
    if (layer_alpha_encoding && depth_buf)

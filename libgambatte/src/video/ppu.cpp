@@ -261,7 +261,8 @@ namespace M3Start {
 namespace M3Loop {
 
 static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *const dbufline,
-		unsigned char const *const tileMapLine, unsigned const tileline, unsigned tileMapXpos) {
+		unsigned char const *const tileMapLine, unsigned const tileline, unsigned tileMapXpos,
+		video_pixel_t *const bg_dbufline) {
 	unsigned const tileIndexSign = ~p.lcdc << 3 & 0x80;
 	unsigned char const *const tileDataLine = p.vram + tileIndexSign * 32 + tileline * 2;
 	int xpos = p.xpos;
@@ -323,10 +324,14 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 			unsigned ntileword = p.ntileword;
 			video_pixel_t *      dst    = dbufline + xpos - 8;
 			video_pixel_t *const dstend = dst + n;
+			video_pixel_t *      bgdst  = bg_dbufline ? bg_dbufline + xpos - 8 : 0;
 			xpos += n;
 
 			if (!lcdcBgEn(p)) {
-				do { *dst++ = p.bgPalette[0]; } while (dst != dstend);
+				do {
+					*dst++ = p.bgPalette[0];
+					if (bgdst) *bgdst++ = p.bgPalette[0];
+				} while (dst != dstend);
 				tileMapXpos += n >> 3;
 
 				unsigned const tno = tileMapLine[(tileMapXpos - 1) & 0x1F];
@@ -341,6 +346,13 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 				dst[5] = p.bgPalette[(ntileword & 0x0C00) >> 10];
 				dst[6] = p.bgPalette[(ntileword & 0x3000) >> 12];
 				dst[7] = p.bgPalette[ ntileword           >> 14];
+				if (bgdst) {
+					bgdst[0] = dst[0]; bgdst[1] = dst[1];
+					bgdst[2] = dst[2]; bgdst[3] = dst[3];
+					bgdst[4] = dst[4]; bgdst[5] = dst[5];
+					bgdst[6] = dst[6]; bgdst[7] = dst[7];
+					bgdst += 8;
+				}
 				dst += 8;
 
 				unsigned const tno = tileMapLine[tileMapXpos & 0x1F];
@@ -372,6 +384,14 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 			dst[5] = p.bgPalette[(tileword & 0x0C00) >> 10];
 			dst[6] = p.bgPalette[(tileword & 0x3000) >> 12];
 			dst[7] = p.bgPalette[ tileword           >> 14];
+
+			if (bg_dbufline) {
+				video_pixel_t *const bgdst = bg_dbufline + (xpos - 8);
+				bgdst[0] = dst[0]; bgdst[1] = dst[1];
+				bgdst[2] = dst[2]; bgdst[3] = dst[3];
+				bgdst[4] = dst[4]; bgdst[5] = dst[5];
+				bgdst[6] = dst[6]; bgdst[7] = dst[7];
+			}
 
 			int i = nextSprite - 1;
 
@@ -452,7 +472,8 @@ static void doFullTilesUnrolledDmg(PPUPriv &p, int const xend, video_pixel_t *co
 }
 
 static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *const dbufline,
-		unsigned char const *const tileMapLine, unsigned const tileline, unsigned tileMapXpos) {
+		unsigned char const *const tileMapLine, unsigned const tileline, unsigned tileMapXpos,
+		video_pixel_t *const bg_dbufline) {
 	int xpos = p.xpos;
 	unsigned char const *const vram = p.vram;
 	unsigned const tdoffset = tileline * 2 + (~p.lcdc & 0x10) * 0x100;
@@ -505,6 +526,7 @@ static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *co
 			unsigned nattrib   = p.nattrib;
 			video_pixel_t *      dst    = dbufline + xpos - 8;
 			video_pixel_t *const dstend = dst + n;
+			video_pixel_t *      bgdst  = bg_dbufline ? bg_dbufline + xpos - 8 : 0;
 			xpos += n;
 
 			do {
@@ -517,6 +539,13 @@ static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *co
 				dst[5] = bgPalette[(ntileword & 0x0C00) >> 10];
 				dst[6] = bgPalette[(ntileword & 0x3000) >> 12];
 				dst[7] = bgPalette[ ntileword           >> 14];
+				if (bgdst) {
+					bgdst[0] = dst[0]; bgdst[1] = dst[1];
+					bgdst[2] = dst[2]; bgdst[3] = dst[3];
+					bgdst[4] = dst[4]; bgdst[5] = dst[5];
+					bgdst[6] = dst[6]; bgdst[7] = dst[7];
+					bgdst += 8;
+				}
 				dst += 8;
 
 				unsigned const tno = tileMapLine[ tileMapXpos & 0x1F          ];
@@ -558,6 +587,14 @@ static void doFullTilesUnrolledCgb(PPUPriv &p, int const xend, video_pixel_t *co
 			dst[5] = bgPalette[(tileword & 0x0C00) >> 10];
 			dst[6] = bgPalette[(tileword & 0x3000) >> 12];
 			dst[7] = bgPalette[ tileword           >> 14];
+
+			if (bg_dbufline) {
+				video_pixel_t *const bgdst = bg_dbufline + (xpos - 8);
+				bgdst[0] = dst[0]; bgdst[1] = dst[1];
+				bgdst[2] = dst[2]; bgdst[3] = dst[3];
+				bgdst[4] = dst[4]; bgdst[5] = dst[5];
+				bgdst[6] = dst[6]; bgdst[7] = dst[7];
+			}
 
 			int i = nextSprite - 1;
 
@@ -694,6 +731,7 @@ static void doFullTilesUnrolled(PPUPriv &p) {
 		return;
 
 	video_pixel_t *const dbufline = p.framebuf.fbline();
+	video_pixel_t *const bgbufline = p.framebuf.bgbufline();
 	unsigned char const *tileMapLine;
 	unsigned tileline;
 	unsigned tileMapXpos;
@@ -712,19 +750,24 @@ static void doFullTilesUnrolled(PPUPriv &p) {
 
 	if (xpos < 8) {
 		video_pixel_t prebuf[16];
+		video_pixel_t bg_prebuf[16];
 
 		if (p.cgb) {
 			doFullTilesUnrolledCgb(p, xend < 8 ? xend : 8, prebuf + (8 - xpos),
-			                       tileMapLine, tileline, tileMapXpos);
+			                       tileMapLine, tileline, tileMapXpos,
+			                       bgbufline ? bg_prebuf + (8 - xpos) : 0);
 		} else {
 			doFullTilesUnrolledDmg(p, xend < 8 ? xend : 8, prebuf + (8 - xpos),
-			                       tileMapLine, tileline, tileMapXpos);
+			                       tileMapLine, tileline, tileMapXpos,
+			                       bgbufline ? bg_prebuf + (8 - xpos) : 0);
 		}
 
 		int const newxpos = p.xpos;
 
 		if (newxpos > 8) {
 			std::memcpy(dbufline, prebuf + (8 - xpos), (newxpos - 8) * sizeof *dbufline);
+			if (bgbufline)
+				std::memcpy(bgbufline, bg_prebuf + (8 - xpos), (newxpos - 8) * sizeof *bgbufline);
 		} else if (newxpos < 8)
 			return;
 
@@ -735,9 +778,9 @@ static void doFullTilesUnrolled(PPUPriv &p) {
 	}
 
 	if (p.cgb) {
-		doFullTilesUnrolledCgb(p, xend, dbufline, tileMapLine, tileline, tileMapXpos);
+		doFullTilesUnrolledCgb(p, xend, dbufline, tileMapLine, tileline, tileMapXpos, bgbufline);
 	} else
-		doFullTilesUnrolledDmg(p, xend, dbufline, tileMapLine, tileline, tileMapXpos);
+		doFullTilesUnrolledDmg(p, xend, dbufline, tileMapLine, tileline, tileMapXpos, bgbufline);
 }
 
 static void plotPixel(PPUPriv &p) {
@@ -814,6 +857,10 @@ static void plotPixel(PPUPriv &p) {
 
 	if (xpos - 8 >= 0) {
 		fbline[xpos - 8] = pixel;
+		/* Write BG/Window pixel (pre-sprite) to BG-only buffer */
+		video_pixel_t *bgbl = p.framebuf.bgbufline();
+		if (bgbl)
+			bgbl[xpos - 8] = p.bgPalette[twdata + (p.attrib & 7) * 4];
 		/* Write layer to separate depth buffer if available */
 		uint8_t *depthline = p.framebuf.depthline();
 		if (depthline)

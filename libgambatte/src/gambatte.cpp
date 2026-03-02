@@ -130,6 +130,10 @@ void GB::setDepthBuffer(uint8_t *depthBuf) {
 	p_->cpu.setDepthBuffer(depthBuf);
 }
 
+void GB::setBgBuffer(video_pixel_t *bgBuf) {
+	p_->cpu.setBgBuffer(bgBuf);
+}
+
 void GB::loadState(const void *data) {
    SaveState state;
    p_->cpu.setStatePtrs(state);

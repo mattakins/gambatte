@@ -91,6 +91,11 @@ public:
 	  */
 	void setDepthBuffer(uint8_t *depthBuf);
 
+	/** Sets the BG-only buffer for ghost-free parallax.
+	  * @param bgBuf XRGB8888 buffer (same size as video buf) for BG-only rendering
+	  */
+	void setBgBuffer(video_pixel_t *bgBuf);
+
 	/** Sets the callback used for getting input state. */
 	void setInputGetter(InputGetter *getInput);
    

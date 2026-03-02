@@ -98,6 +98,10 @@ public:
 		mem_.setDepthBuffer(depthBuf);
 	}
 
+	void setBgBuffer(video_pixel_t *bgBuf) {
+		mem_.setBgBuffer(bgBuf);
+	}
+
 	void setGameGenie(std::string const &codes) { mem_.setGameGenie(codes); }
 	void setGameShark(std::string const &codes) { mem_.setGameShark(codes); }
 
