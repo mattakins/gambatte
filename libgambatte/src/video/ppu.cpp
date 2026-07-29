@@ -169,6 +169,7 @@ static int loadTileDataByte1(PPUPriv const &p) {
 namespace M3Start {
 	static void f0(PPUPriv &p) {
 		p.xpos = 0;
+		std::memset(p.shadowMask, 0, 160);
 
 		if ((p.winDrawState & win_draw_start) && lcdcWinEn(p)) {
 			p.winDrawState = win_draw_started;
@@ -241,6 +242,7 @@ namespace M3Start {
 		}
 
 		p.xpos = 0;
+		std::memset(p.shadowMask, 0, 160);
 		p.endx = 8 - (p.scx & 7);
 
 		static PPUState const *const flut[8] = {
@@ -781,6 +783,14 @@ static void plotPixel(PPUPriv &p) {
                pixel = p.spPalette[(attrib >> 2 & 4) + spdata];
 				else
                pixel = p.spPalette[(attrib & 7) * 4 + spdata];
+
+				// Mark shadow for foreground sprites
+				if (p.dropShadowEnabled && !(attrib & attr_bgpriority)) {
+					int shadowX = xpos + p.shadowOffsetX;
+					if (shadowX >= 0 && shadowX < 160) {
+						p.shadowMask[shadowX] = 1;
+					}
+				}
 			}
 		} else {
 			do {
@@ -793,8 +803,17 @@ static void plotPixel(PPUPriv &p) {
 				--i;
 			} while (i >= 0 && int(p.spriteList[i].spx) > xpos - 8);
 
-			if (spdata && lcdcObjEn(p) && (!(attrib & attr_bgpriority) || !twdata))
+			if (spdata && lcdcObjEn(p) && (!(attrib & attr_bgpriority) || !twdata)) {
 				pixel = p.spPalette[(attrib >> 2 & 4) + spdata];
+
+				// Mark shadow for foreground sprites
+				if (p.dropShadowEnabled && !(attrib & attr_bgpriority)) {
+					int shadowX = xpos + p.shadowOffsetX;
+					if (shadowX >= 0 && shadowX < 160) {
+						p.shadowMask[shadowX] = 1;
+					}
+				}
+			}
 		}
 	}
 
@@ -1472,9 +1491,13 @@ PPUPriv::PPUPriv(NextM0Time &nextM0Time, unsigned char const *const oamram, unsi
 , cgb(false)
 , dmgMode(false)
 , weMaster(false)
+, dropShadowEnabled(false)
+, shadowOffsetX(1)
+, shadowOffsetY(2)
 {
 	std::memset(spriteList, 0, sizeof spriteList);
 	std::memset(spwordList, 0, sizeof spwordList);
+	std::memset(shadowMask, 0, sizeof shadowMask);
 }
 
 static void saveSpriteList(PPUPriv const &p, SaveState &ss) {
@@ -1749,6 +1772,38 @@ void PPU::update(unsigned long const cc) {
 	if (p_.cycles >= 0) {
 		p_.framebuf.setFbline(p_.lyCounter.ly());
 		p_.nextCallPtr->f(p_);
+	}
+}
+
+void PPU::applyShadows(video_pixel_t *framebuffer, int pitch, int ly) {
+	if (!p_.dropShadowEnabled) return;
+
+	int shadowY = ly + p_.shadowOffsetY;
+	if (shadowY >= 144 || shadowY < 0) return;
+
+	video_pixel_t *shadowLine = framebuffer + shadowY * pitch;
+
+	for (int x = 0; x < 160; x++) {
+		if (p_.shadowMask[x]) {
+			video_pixel_t &pixel = shadowLine[x];
+
+			// Simple ground detection: avoid pure white/black (UI elements)
+			if (pixel != 0xFFFF && pixel != 0x0000) {
+#ifdef VIDEO_RGB565
+					// Darken RGB565 pixel by ~50% for more visible shadows
+					unsigned r = ((pixel >> 11) & 0x1F) / 2;
+					unsigned g = ((pixel >> 5) & 0x3F) / 2;
+					unsigned b = (pixel & 0x1F) / 2;
+					pixel = (r << 11) | (g << 5) | b;
+#else
+					// Darken 32-bit pixel by ~50% for more visible shadows
+					unsigned r = ((pixel >> 16) & 0xFF) / 2;
+					unsigned g = ((pixel >> 8) & 0xFF) / 2;
+					unsigned b = (pixel & 0xFF) / 2;
+					pixel = (r << 16) | (g << 8) | b | (pixel & 0xFF000000);
+#endif
+			}
+		}
 	}
 }
 

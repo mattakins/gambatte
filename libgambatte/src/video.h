@@ -158,6 +158,9 @@ class LCD
       void setColorCorrectionBrightness(float colorCorrectionBrightness);
       void setDarkFilterLevel(unsigned darkFilterLevel);
       video_pixel_t gbcToRgb32(const unsigned bgr15);
+
+      PPU& ppu() { return ppu_; }
+
    private:
       enum Event { MEM_EVENT, LY_COUNT }; enum { NUM_EVENTS = LY_COUNT + 1 };
       enum MemEvent { ONESHOT_LCDSTATIRQ, ONESHOT_UPDATEWY2, MODE1_IRQ, LYC_IRQ, SPRITE_MAP,

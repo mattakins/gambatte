@@ -145,6 +145,11 @@ public:
    void *oamram_ptr() const;
 #endif
 
+   /** Drop shadow system for enhanced visual depth */
+   void setDropShadowEnabled(bool enabled);
+   void setShadowOffset(int x, int y);
+   void applyShadows(video_pixel_t *framebuffer, int pitch, int ly);
+
 private:
 	struct Priv;
 	Priv *const p_;

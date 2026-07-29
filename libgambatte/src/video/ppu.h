@@ -95,6 +95,12 @@ struct PPUPriv {
    bool dmgMode;
 	bool weMaster;
 
+	// Simple drop shadow system
+	bool dropShadowEnabled;
+	unsigned char shadowMask[160];
+	int shadowOffsetX;
+	int shadowOffsetY;
+
 	PPUPriv(NextM0Time &nextM0Time, unsigned char const *oamram, unsigned char const *vram);
 };
 
@@ -139,6 +145,11 @@ public:
 	void speedChange(unsigned long cycleCounter);
 	video_pixel_t * spPalette() { return p_.spPalette; }
 	void update(unsigned long cc);
+
+	// Drop shadow control methods
+	void setDropShadowEnabled(bool enabled) { p_.dropShadowEnabled = enabled; }
+	void setShadowOffset(int x, int y) { p_.shadowOffsetX = x; p_.shadowOffsetY = y; }
+	void applyShadows(video_pixel_t *framebuffer, int pitch, int ly);
 
 private:
 	PPUPriv p_;

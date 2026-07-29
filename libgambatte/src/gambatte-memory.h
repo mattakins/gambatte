@@ -52,6 +52,9 @@ public:
    void display_setColorCorrectionBrightness(float colorCorrectionBrightness) { lcd_.setColorCorrectionBrightness(colorCorrectionBrightness); }
    void display_setDarkFilterLevel(unsigned darkFilterLevel) { lcd_.setDarkFilterLevel(darkFilterLevel); }
    video_pixel_t display_gbcToRgb32(const unsigned bgr15) { return lcd_.gbcToRgb32(bgr15); }
+   void display_setDropShadowEnabled(bool enabled) { lcd_.ppu().setDropShadowEnabled(enabled); }
+   void display_setShadowOffset(int x, int y) { lcd_.ppu().setShadowOffset(x, y); }
+   void display_applyShadows(video_pixel_t *framebuffer, int pitch, int ly) { lcd_.ppu().applyShadows(framebuffer, pitch, ly); }
    void clearCheats() { cart_.clearCheats(); interrupter_.clearCheats(); }
    void *vram_ptr() const { return cart_.vramdata(); }
    void *rambank0_ptr() const { return cart_.wramdata(0); }

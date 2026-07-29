@@ -221,5 +221,17 @@ void *GB::oamram_ptr() const {
 }
 #endif
 
+void GB::setDropShadowEnabled(bool enabled) {
+	p_->cpu.mem_.display_setDropShadowEnabled(enabled);
+}
+
+void GB::setShadowOffset(int x, int y) {
+	p_->cpu.mem_.display_setShadowOffset(x, y);
+}
+
+void GB::applyShadows(video_pixel_t *framebuffer, int pitch, int ly) {
+	p_->cpu.mem_.display_applyShadows(framebuffer, pitch, ly);
+}
+
 }
 
