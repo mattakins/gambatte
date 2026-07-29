@@ -1162,6 +1162,51 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "0"
    },
 #endif
+   {
+      "gambatte_drop_shadows",
+      "Drop Shadows",
+      NULL,
+      "Add drop shadows to foreground sprites for depth effect (Mario Maker style).",
+      NULL,
+      NULL,
+      {
+         { "disabled", NULL },
+         { "enabled",  NULL },
+         { NULL, NULL },
+      },
+      "disabled"
+   },
+   {
+      "gambatte_shadow_offset_x",
+      "Shadow Offset X",
+      NULL,
+      "Horizontal shadow offset in pixels.",
+      NULL,
+      NULL,
+      {
+         { "1", NULL },
+         { "2", NULL },
+         { "3", NULL },
+         { NULL, NULL },
+      },
+      "1"
+   },
+   {
+      "gambatte_shadow_offset_y",
+      "Shadow Offset Y",
+      NULL,
+      "Vertical shadow offset in pixels.",
+      NULL,
+      NULL,
+      {
+         { "1", NULL },
+         { "2", NULL },
+         { "3", NULL },
+         { "4", NULL },
+         { NULL, NULL },
+      },
+      "2"
+   },
    { NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL },
 };
 

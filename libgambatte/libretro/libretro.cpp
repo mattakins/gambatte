@@ -2184,6 +2184,31 @@ static void check_variables(bool startup)
          up_down_allowed = false;
    }
 
+   // Drop shadow settings
+   var.key   = "gambatte_drop_shadows";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      gb.setDropShadowEnabled(!strcmp(var.value, "enabled"));
+   }
+
+   int shadowOffsetX = 1, shadowOffsetY = 2;
+   var.key   = "gambatte_shadow_offset_x";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      shadowOffsetX = atoi(var.value);
+   }
+
+   var.key   = "gambatte_shadow_offset_y";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      shadowOffsetY = atoi(var.value);
+   }
+
+   gb.setShadowOffset(shadowOffsetX, shadowOffsetY);
+
    turbo_period      = TURBO_PERIOD_MIN;
    turbo_pulse_width = TURBO_PULSE_WIDTH_MIN;
    var.key           = "gambatte_turbo_period";
@@ -2737,6 +2762,11 @@ void retro_run()
 #ifdef DUAL_MODE
    while (gb2.runFor(video_buf + GB_SCREEN_WIDTH, VIDEO_PITCH, sound_buf.u32, samples) == -1) {}
 #endif
+
+   /* Apply drop shadows to rendered frame */
+   for (int ly = 0; ly < VIDEO_HEIGHT - 2; ly++) {
+      gb.applyShadows(video_buf, VIDEO_PITCH, ly);
+   }
 
    /* Perform interframe blending, if required */
    if (blend_frames)
